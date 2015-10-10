@@ -8,11 +8,10 @@
 
 import UIKit
 
-//button的TouchUpInside变量
-var TouchUpInsideEventControl = UIControlEvents.TouchUpInside
-
 
 //
+var NSUserDefaultsIPDidChangedNotificationName = "NSUserDefaultsIPDidChangedNotificationName"
+var NSUserDefaultsIPValueName = "NSUserDefaultsIPValueName"
 
 
 

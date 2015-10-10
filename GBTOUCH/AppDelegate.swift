@@ -8,28 +8,38 @@
 
 import UIKit
 
+var gbUser = GBUser()
+
+
+//ip在setting.bundle中的键
+var ipKey = "ip_preference"
+
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, UIAlertViewDelegate {
 
     var window: UIWindow?
-
+    var server = Server()
+    var ip = String()
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         
-        var server = Server()
-        if server.ipUrl == ""{
-            UIAlertView(title: "提示", message: "请先设置IP再使用本系统", delegate: self, cancelButtonTitle: "设置").show()
-        }else{
-            
-        }
+        var ipValue = server.ipUrl
+        ip = ipValue
+        println("ipvalue = \(ipValue)")
         
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "defaultsSettingsChanged:", name: UIApplicationWillEnterForegroundNotification, object: nil)
+//        NSNotificationCenter.defaultCenter().postNotificationName(NSUserDefaultsIPDidChangedNotificationName, object: nil, userInfo: [NSUserDefaultsIPValueName: self.ip])
+//        var ip = String()
+//        if let ipValue = NSUserDefaults.standardUserDefaults().objectForKey(ipKey) as? String {
+//            ip = ipValue
+//        }else{
+//            ip = ""
+//        }
+//        NSNotificationCenter.defaultCenter().postNotificationName(NSUserDefaultsIPDidChangedNotificationName, object: nil, userInfo: [NSUserDefaultsIPValueName: ip])
         
         return true
-    }
-
-    
-    func alertView(alertView: UIAlertView, clickedButtonAtIndex buttonIndex: Int) {
-//        UIApplication.sharedApplication().openURL(<#url: NSURL#>)
     }
     
     
@@ -41,6 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UIAlertViewDelegate {
     func applicationDidEnterBackground(application: UIApplication) {
         // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+        println("applicationDidEnterBackground ")
     }
 
     func applicationWillEnterForeground(application: UIApplication) {
@@ -53,6 +64,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UIAlertViewDelegate {
 
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIApplicationWillEnterForegroundNotification, object: nil)
+    }
+    
+    func defaultsSettingsChanged(notification: NSNotification){
+        let standards = NSUserDefaults.standardUserDefaults()
+        
+        if let ipValue = standards.objectForKey(ipKey) as? String{
+            self.ip = ipValue
+        }else{
+            self.ip = ""
+        }
+        println("ip changed = \(self.ip)")
+        
+        NSNotificationCenter.defaultCenter().postNotificationName(NSUserDefaultsIPDidChangedNotificationName, object: nil, userInfo: [NSUserDefaultsIPValueName: self.ip])
     }
 
 

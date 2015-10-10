@@ -10,15 +10,6 @@ import UIKit
 
 extension UIButton {
 
-    /*
-    // Only override drawRect: if you perform custom drawing.
-    // An empty implementation adversely affects performance during animation.
-    override func drawRect(rect: CGRect) {
-        // Drawing code
-    }
-    */
-    
-    
     func btnAddTarget(target: AnyObject?, action: Selector){
         self.addTarget(target, action: action, forControlEvents: UIControlEvents.TouchUpInside)
     }

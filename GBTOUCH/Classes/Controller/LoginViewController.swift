@@ -7,37 +7,137 @@
 //
 
 import UIKit
+import Alamofire
 
+
+var appDelegate = AppDelegate()
 
 
 class LoginViewController: UIViewController {
 
+    @IBOutlet weak var bg_btn: UIButton!
     @IBOutlet weak var txtusername: UITextField!
     @IBOutlet weak var txtPassword: UITextField!
     @IBOutlet weak var btnLogin: UIButton!
     @IBOutlet weak var btnOffline: UIButton!
+    
+    //设置页面ip
+    var ip = String()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        println("filepath = \(NSHomeDirectory())")
+        
+        //程序初始化的时候判断url是否为空，如果空，提示设置ip，否则不提示
+        if appDelegate.server.ipUrl == ""{
+            UIAlertView(title: "提示", message: "请先设置IP再使用本系统", delegate: self, cancelButtonTitle: "设置").show()
+        }
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "checkIfIPValueValuable:", name: NSUserDefaultsIPDidChangedNotificationName, object: nil)
+        
+        
         //设置带图片的textfield
         setTextFieldWithImage("username", txtFiled: self.txtusername)
         setTextFieldWithImage("password", txtFiled: self.txtPassword)
         
         //给登录、离线会议button添加事件
-        btnLogin.addTarget(self, action: "LoginClick:", forControlEvents: TouchUpInsideEventControl)
-        btnOffline.addTarget(self, action: "OfflineClick:", forControlEvents: TouchUpInsideEventControl)
+        btnLogin.btnAddTarget(self, action: "loginClick:")
+        btnOffline.btnAddTarget(self, action: "offlineClick:")
+        
+    }
+
+    
+    func checkIfIPValueValuable(notification: NSNotification){
+        if let userInfo = notification.userInfo{
+            self.ip = userInfo[NSUserDefaultsIPValueName] as! String
+            if self.ip.isEmpty{
+                UIAlertView(title: "提示", message: "请先设置IP再使用本系统", delegate: self, cancelButtonTitle: "设置").show()
+            }
+        }
     }
     
     
     func loginClick(sender: UIButton){
+        var name = txtusername.text
+        var password = txtPassword.text
+        
+        var paras = ["username":name, "password": password]
+        
+        Alamofire.request(.POST, appDelegate.server.loginServiceUrl ,parameters: paras, encoding: .JSON).responseJSON(options: NSJSONReadingOptions.MutableContainers) { (request,response, data, error) ->
+            Void in
+            
+            println("gbuser data = \(data)")
+
+            var loadingView = MRProgressOverlayView.showOverlayAddedTo(self.view, title: "正在登录，请稍候...", mode: MRProgressOverlayViewMode.Indeterminate, animated: true)
+            
+            if error != nil{
+                println("login err = \(error)")
+                loadingView.dismiss(true)
+                UIAlertView(title: "提示", message: "登录失败，无法连接到服务器", delegate: self, cancelButtonTitle: "确定").show()
+                return
+            } else if(response?.statusCode != 200){
+                loadingView.dismiss(true)
+                UIAlertView(title: "提示", message: "登录失败，用户名或密码错误", delegate: self, cancelButtonTitle: "确定").show()
+                self.txtusername.text = ""
+                self.txtPassword.text = ""
+                self.txtusername.becomeFirstResponder()
+                return
+            }else{
+                loadingView.dismiss(true)
+                //把json数据转换成GBUser类
+            
+                var loginUser: GBUser = GBUser(keyValues: data!)
+           
+                NSUserDefaults.standardUserDefaults().setObject(data, forKey: "GBUser")
+
+               
+                //把当前用户赋值为全局变量gbUser
+                gbUser = loginUser
+
+//                self.getUserName()
+                
+                //登录成功则跳转到议程界面
+                self.SwitchViewControllerWithStoryboard("agendaVC", sourceVC: self)
+            }
+        }
+
+    }
+    
+    
+    func offlineClick(sender: UIButton){
         
     }
     
-    
-    func OfflineClick(sender: UIButton){
-    
+    func getUserName(){
+        var standards = NSUserDefaults.standardUserDefaults()
+        var username = standards.objectForKey("GBUser")?.objectForKey("username")
+        println("username = \(username)")
     }
     
+    
+    func SwitchViewControllerWithStoryboard(destVCIdentififyName: String, sourceVC: UIViewController){
+        let storyboard: UIStoryboard = UIStoryboard(name: "Main", bundle: nil)
+        let destVC = storyboard.instantiateViewControllerWithIdentifier(destVCIdentififyName) as! UIViewController
+        sourceVC.presentViewController(destVC, animated: true, completion: nil)
+    }
+//    func SaveModel(data: NSData, saveKey: String){
+//        
+//        
+//        //把user信息存储在NSUserDefaults中以GBUser为键的nsdictionary中,当登录用户信息更新的时候，该字典中键值也会自动更新
+//        let userData = NSKeyedArchiver.archivedDataWithRootObject(data)
+//        NSUserDefaults.standardUserDefaults().setObject(data, forKey: "GBUser")
+//    }
+    
+    
+    
+    
+    
+    /**
+    给出一个图片，设置文本框带图片格式
+    
+    :param: imageName <#imageName description#>
+    :param: txtFiled  <#txtFiled description#>
+    */
     func setTextFieldWithImage(imageName: String, txtFiled: UITextField){
         
         //设置图片的高度
@@ -53,6 +153,10 @@ class LoginViewController: UIViewController {
         
         txtFiled.leftView = leftView
         txtFiled.leftViewMode = UITextFieldViewMode.Always
+    }
+    
+    override func viewWillDisappear(animated: Bool) {
+        NSNotificationCenter.defaultCenter().removeObserver(self, name: NSUserDefaultsIPDidChangedNotificationName, object: nil)
     }
 
     override func didReceiveMemoryWarning() {

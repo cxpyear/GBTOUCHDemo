@@ -16,25 +16,29 @@ class Server: NSObject {
     override init(){
         super.init()
         println("server init===============")
-        SettingsBundleConfig().registerDefaultsFromSettingsBundle()
+        //获取ip
+        ipUrl = getIP()
         
-        getIP()
+        //用户登录
+        loginServiceUrl = "http://" + ipUrl + ":18080/v1/login"
     }
     
-    func getIP(){
+    
+    func getIP() -> String{
         println("server getIP===============")
-        var standardDefaults = NSUserDefaults.standardUserDefaults()
-        var key = "ip_preference"
         
-        var value = standardDefaults.objectForKey(key)
-        println("defaults = \(value)")
-        if let ip = standardDefaults.stringForKey("ip_preference"){
-            self.ipUrl = ip
+        var result = String()
+        var standardDefaults = NSUserDefaults.standardUserDefaults()
+
+        if let ip = standardDefaults.stringForKey(ipKey){
+            result = ip
         }else{
-            self.ipUrl = ""
+            result = ""
         }
+        
+        println("get ip ========= \(result)")
+        return result
     }
     
-    //loginServiceUrl = "http://" + url + ":18080/v1/login"
     
 }
